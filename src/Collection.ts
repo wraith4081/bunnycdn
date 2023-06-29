@@ -1,5 +1,6 @@
 import { Library } from "./Stream";
 import StatusResponse from "./types/StatusResponse";
+import fetch from "node-fetch";
 
 export interface APICollection {
     videoLibraryId: number;

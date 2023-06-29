@@ -1,6 +1,6 @@
 {
   "name": "bunnycdn",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Use the unofficial BunnyCDN library quickly and easily with Javascript",
   "main": "dist/index.js",
   "scripts": {
@@ -19,13 +19,15 @@
   },
   "devDependencies": {
     "@types/node": "^18.15.11",
+    "@types/node-fetch": "^2.6.4",
     "typescript": "^5.0.3"
   },
   "repository": {
-    "url": "https://github.com/wraith4081/bunnycdn"
+    "url": "git+https://github.com/wraith4081/bunnycdn.git"
   },
   "bugs": {
     "url": "https://github.com/wraith4081/bunnycdn/issues"
   },
-  "homepage": "https://github.com/wraith4081/bunnycdn#readme"
+  "homepage": "https://github.com/wraith4081/bunnycdn#readme",
+  "types": "./dist/index.d.ts"
 }
