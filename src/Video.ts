@@ -1,6 +1,7 @@
 import { Library } from "./Stream";
 import StatusResponse from "./types/StatusResponse";
 import VideoType, { VideoMetaTag, VideoTranscodingMessage, VideoMoment, VideoChapter, APIVideo } from "./types/Video";
+import fetch from "node-fetch";
 
 export interface UpdateParams {
     title?: string;

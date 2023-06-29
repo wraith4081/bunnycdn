@@ -2,6 +2,7 @@ import Collection, { APICollection } from "./Collection";
 import StatusResponse from "./types/StatusResponse";
 import { APIVideo, VideoList, VideoStatics } from "./types/Video";
 import Video from "./Video";
+import fetch from "node-fetch";
 
 export default class Stream {
 
