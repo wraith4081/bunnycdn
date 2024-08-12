@@ -89,6 +89,89 @@ export default class VideoLibrary {
 		);
 	}
 
+	async resetAPIKey() {
+		if (!this.attached)
+			return respond('error', {
+				message: 'VideoLibrary is not attached',
+				status: 400,
+			});
+
+		return await this.#post<RawVideoLibrary>(
+			`https://api.bunny.net/videolibrary/${this.data.Id}/resetApiKey`,
+			{},
+			204
+		);
+	}
+
+	async addAllowedReferrer(referrer: string) {
+		if (!this.attached)
+			return respond('error', {
+				message: 'VideoLibrary is not attached',
+				status: 400,
+			});
+
+		return await this.#post<RawVideoLibrary>(
+			`https://api.bunny.net/videolibrary/${this.data.Id}/addAllowedReferrer`,
+			{ Hostname: referrer },
+			204
+		);
+	}
+
+	async removeAllowedReferrer(referrer: string) {
+		if (!this.attached)
+			return respond('error', {
+				message: 'VideoLibrary is not attached',
+				status: 400,
+			});
+
+		return await this.#post<RawVideoLibrary>(
+			`https://api.bunny.net/videolibrary/${this.data.Id}/removeAllowedReferrer`,
+			{ Hostname: referrer },
+			204
+		);
+	}
+
+	async addBlockedReferrer(referrer: string) {
+		if (!this.attached)
+			return respond('error', {
+				message: 'VideoLibrary is not attached',
+				status: 400,
+			});
+
+		return await this.#post<RawVideoLibrary>(
+			`https://api.bunny.net/videolibrary/${this.data.Id}/addBlockedReferrer`,
+			{ Hostname: referrer },
+			204
+		);
+	}
+
+	async removeBlockedReferrer(referrer: string) {
+		if (!this.attached)
+			return respond('error', {
+				message: 'VideoLibrary is not attached',
+				status: 400,
+			});
+
+		return await this.#post<RawVideoLibrary>(
+			`https://api.bunny.net/videolibrary/${this.data.Id}/removeBlockedReferrer`,
+			{ Hostname: referrer },
+			204
+		);
+	}
+
+	async deleteWatermark() {
+		if (!this.attached)
+			return respond('error', {
+				message: 'VideoLibrary is not attached',
+				status: 400,
+			});
+
+		return await this.#delete<RawVideoLibrary>(
+			`https://api.bunny.net/videolibrary/${this.data.Id}/watermark`,
+			204
+		);
+	}
+
 	public static async getLanguages(
 		apiKey: string
 	): Promise<Result<Language[]>> {
