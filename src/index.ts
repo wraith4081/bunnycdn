@@ -7,6 +7,7 @@ import withPagination, {
 import { RawVideoLibrary } from './types/videoLibrary';
 import VideoLibrary from './lib/videoLibrary';
 import { respond } from './utils/util';
+import StorageZone from './lib/storageZone';
 
 export default class BunnyCDN {
 	instance: AxiosInstance;
@@ -75,6 +76,42 @@ export default class BunnyCDN {
 			fetchPromise,
 			fetchPromise.then((res) => res?.attachment),
 		]).then(([videoLibrary]) => videoLibrary);
+	}
+
+	listStorageZones = withPagination(
+		async (
+			data: {
+				includeDeleted?: boolean;
+				search?: string;
+			},
+			options: PaginationOptions
+		) => {
+			const query = new URLSearchParams({
+				page: options.page.toString(),
+				perPage: options.limit.toString(),
+			});
+
+			if (data.includeDeleted) query.append('includeDeleted', 'true');
+			if (data.search) query.append('search', data.search);
+
+			return await this.#get<PaginatedResult<any[]>>(
+				`https://api.bunny.net/storagezone?${query}`
+			);
+		}
+	);
+
+	async getStorageZone(
+		id: number,
+		autoAttach: boolean = true
+	): Promise<StorageZone | null> {
+		const fetchPromise = StorageZone.fetch(id, this.apiKey);
+
+		if (!autoAttach) return fetchPromise;
+
+		return Promise.all([
+			fetchPromise,
+			fetchPromise.then((res) => res?.attachment),
+		]).then(([storageZone]) => storageZone);
 	}
 
 	async #get<T extends any>(
