@@ -37,13 +37,27 @@ export default class BunnyCDN {
 	}
 
 	listVideoLibraries = withPagination(
-		async (data: { search: string }, options: PaginationOptions) => {
+		async (
+			data: string | { search: string; includeAccessKey?: true },
+			options: PaginationOptions
+		) => {
+			data;
+
 			const query = new URLSearchParams({
 				page: options.page.toString(),
 				perPage: options.limit.toString(),
-				search: data.search,
-				includeAccessKey: 'true',
 			});
+
+			query.append(
+				'search',
+				typeof data === 'string' ? data : data.search
+			);
+			query.append(
+				'includeAccessKey',
+				(
+					typeof data !== 'string' && data.includeAccessKey === true
+				).toString()
+			);
 
 			const result = await this.#get<PaginatedResult<any[]>>(
 				`https://api.bunny.net/videolibrary?${query}`
