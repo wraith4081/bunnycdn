@@ -23,3 +23,29 @@ export interface RawStorageZone {
 	Discount: number;
 }
 
+export interface EditableStorageZone {
+	ReplicationRegions: StorageZoneRegionKey[];
+	OriginUrl: string;
+	Custom404FilePath: string | null;
+	Rewrite404To200: boolean;
+}
+
+type TYear = `${number}${number}${number}${number}`;
+type TMonth = `${number}${number}`;
+type TDay = `${number}${number}`;
+type THours = `${number}${number}`;
+type TMinutes = `${number}${number}`;
+type TSeconds = `${number}${number}`;
+type TMilliseconds = `${number}${number}${number}`;
+
+type TDateISO =
+	`${TYear}-${TMonth}-${TDay}T${THours}:${TMinutes}:${TSeconds}.${TMilliseconds}Z`;
+
+export interface RawStorageZoneStatistics {
+	StorageUsedChart: {
+		[key: TDateISO]: number;
+	};
+	FileCountChart: {
+		[key: TDateISO]: number;
+	};
+}

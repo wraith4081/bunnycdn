@@ -1,8 +1,9 @@
 import axios, { AxiosInstance } from 'axios';
-import { RawStorageZone } from '../types/storageZone';
+import { EditableStorageZone, RawStorageZone, RawStorageZoneStatistics } from '../types/storageZone';
 import { Result } from '../types/general';
 import { respond } from '../utils/util';
 import {
+	storageZoneConfigFields,
 	StorageZoneRegion,
 	StorageZoneRegionKey,
 	StorageZoneRegionList,
@@ -44,6 +45,171 @@ export default class StorageZone {
 		return this;
 	}
 
+	async delete() {
+		if (!this.attached)
+			return respond('error', {
+				message: 'Zone is not attached',
+				status: 400,
+			});
+
+		const req = await this.instance.delete(
+			`https://api.bunny.net/storagezone/${this.data.Id}`
+		);
+
+		if (req.status !== 204)
+			return respond('error', {
+				status: req.status,
+				message: req.data?.Message || 'An error occurred',
+			});
+
+		return respond('success');
+	}
+
+	// TODO: Parse the data and return a class for managing the data properly
+	async statistics(data?: { from: Date; to: Date }) {
+		if (!this.attached)
+			return respond('error', {
+				message: 'Zone is not attached',
+				status: 400,
+			});
+
+		if (data && (!data.from || !data.to)) {
+			return respond('error', {
+				message: 'Missing required fields: from, to',
+				status: 400,
+			});
+		}
+
+		if (data && data!.from?.getTime() > data!.to?.getTime())
+			return respond('error', {
+				message: 'From date cannot be greater than to date',
+				status: 400,
+			});
+
+		const query = new URLSearchParams();
+		if (data) {
+			query.append('from', data.from.toISOString());
+			query.append('to', data.to.toISOString());
+		}
+
+		return this.#get<RawStorageZoneStatistics>(
+			`https://api.bunny.net/storagezone/${this.data.Id}/statistics?${query}`
+		);
+	}
+
+	async update(data: Partial<EditableStorageZone>) {
+		const payload: {
+			[key: string]: any;
+		} = {};
+
+		for (const field of storageZoneConfigFields) {
+			if (!(field.name in data)) {
+				if (field.optional) continue;
+
+				return respond('error', {
+					message: `Missing required field: ${field.name}`,
+					status: 400,
+				});
+			}
+
+			const value = (data as any)?.[field.name];
+
+			if (field.validate && !field.validate(value)) {
+				return respond('error', {
+					message: `Invalid value for field: ${field.name}`,
+					status: 400,
+				});
+			}
+
+			payload[field.name] = value;
+		}
+
+		const req = await this.#post<RawStorageZone>(
+			`https://api.bunny.net/storagezone/${this.data.Id}`,
+			payload,
+			204
+		);
+
+		if (req.status !== 'success') return req;
+		
+		this.attached = false;
+		this.attach(this.data.Id, false);
+		return respond('success');
+	}
+
+	async resetToken(apiKey: string, type?: 'readonly') {
+		if (!this.attached)
+			return respond('error', {
+				message: 'Zone is not attached',
+				status: 400,
+			});
+
+		if (!apiKey)
+			return respond('error', {
+				message: 'Missing Field: apiKey',
+				status: 400,
+			});
+
+		const req = await this.#post(
+			`https://api.bunny.net/storagezone/${this.data.Id}/${
+				type === 'readonly' ? 'resetReadOnlyPassword' : 'resetPassword'
+			}`,
+			{},
+			204
+		);
+
+		if (req.status !== 'success') return req;
+
+		const newZone = await StorageZone.fetch(this.data.Id, apiKey);
+
+		if (!newZone) return respond('error', { message: 'An error occurred' });
+
+		this.data = newZone.data;
+		return respond('success');
+	}
+
+	public static async resetToken(
+		id: number,
+		apiKey: string,
+		type?: 'readonly'
+	) {
+		if (!id || isNaN(id) || id < 1)
+			return respond('error', {
+				message: 'Invalid Field: id',
+				status: 400,
+			});
+
+		if (!apiKey)
+			return respond('error', {
+				message: 'Missing Field: apiKey',
+				status: 400,
+			});
+
+		const req = await axios.post(
+			`https://api.bunny.net/storagezone/${id}/${
+				type === 'readonly' ? 'resetReadOnlyPassword' : 'resetPassword'
+			}`,
+			{},
+			{
+				headers: {
+					AccessKey: apiKey,
+				},
+			}
+		);
+
+		if (req.status !== 204)
+			return respond('error', {
+				status: req.status,
+				message: req.data?.Message || 'An error occurred',
+			});
+
+		const newZone = await StorageZone.fetch(id, apiKey);
+
+		if (!newZone) return respond('error', { message: 'An error occurred' });
+
+		return respond('success', newZone);
+	}
+
 	public static async fetch(id: number, apiKey: string) {
 		const req = await axios({
 			url: `https://api.bunny.net/storagezone/${id}`,
@@ -54,6 +220,7 @@ export default class StorageZone {
 		});
 
 		if (req.status === 200) {
+			req.data.Password = apiKey;
 			const storageZone = new StorageZone(req.data, true);
 			storageZone.attached = true;
 
@@ -63,7 +230,7 @@ export default class StorageZone {
 		return null;
 	}
 
-	public static async isZoneAvilable(name: string, apiKey: string) {
+	public static async isZoneAvailable(name: string, apiKey: string) {
 		const req = await axios.post(
 			'https://api.bunny.net/storagezone/checkavailability',
 			{
@@ -98,7 +265,9 @@ export default class StorageZone {
 		},
 		apiKey: string
 	) {
-		const payload = {};
+		const payload: {
+			[key: string]: any;
+		} = {};
 
 		if (data.OriginUrl) {
 			if (!isValidURL(data.OriginUrl))
@@ -184,6 +353,25 @@ export default class StorageZone {
 				message: data?.Message || 'An error occurred',
 				status,
 			});
+		return respond('success', {
+			data,
+		} as {
+			data: T;
+		});
+	}
+
+	async #post<T extends any>(
+		url: string,
+		body: any,
+		expectedStatus: number | number[] = 200
+	): Promise<Result<T>> {
+		const { data, status } = await this.instance.post(url, body);
+		if (![expectedStatus].flat().includes(status))
+			return respond('error', {
+				message: data?.Message || 'An error occurred',
+				status,
+			});
+
 		return respond('success', {
 			data,
 		} as {
