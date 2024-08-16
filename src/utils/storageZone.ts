@@ -1,3 +1,5 @@
+import { isValidURL, ConfigField, FieldTypes } from './validator';
+
 export enum StorageZoneRegion {
 	DE = 'storage.bunnycdn.com',
 	UK = 'uk.storage.bunnycdn.com',
@@ -15,5 +17,44 @@ export enum StorageZoneTier {
 	EDGE = 1,
 }
 
-export const StorageZoneRegionList = ['DE', 'UK', 'NY', 'LA', 'SG', 'SE', 'BR', 'SA', 'SYD'] as const;
-export type StorageZoneRegionKey = typeof StorageZoneRegionList[number];
+export const StorageZoneRegionList = [
+	'DE',
+	'UK',
+	'NY',
+	'LA',
+	'SG',
+	'SE',
+	'BR',
+	'SA',
+	'SYD',
+] as const;
+export type StorageZoneRegionKey = (typeof StorageZoneRegionList)[number];
+
+export const storageZoneConfigFields: ConfigField<FieldTypes>[] = [
+	{
+		name: 'OriginUrl',
+		optional: true,
+		type: FieldTypes.STRING,
+		validate: isValidURL,
+	},
+	{
+		name: 'ReplicationRegions',
+		optional: true,
+		type: FieldTypes.STRING_ARRAY,
+		validate: (value: string[]) =>
+			value.every((v) =>
+				StorageZoneRegionList.includes(v as StorageZoneRegionKey)
+			),
+	},
+	{
+		name: 'Custom404FilePath',
+		optional: true,
+		type: FieldTypes.STRING,
+	},
+	{
+		name: 'Rewrite404To200',
+		optional: true,
+		type: FieldTypes.BOOLEAN,
+		validate: (value) => !!value === value,
+	},
+];

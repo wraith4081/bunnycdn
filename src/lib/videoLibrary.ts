@@ -69,11 +69,17 @@ export default class VideoLibrary {
 			payload[field.name] = value;
 		}
 
-		return await this.#post<RawVideoLibrary>(
+		const req = await this.#post<RawVideoLibrary>(
 			`https://api.bunny.net/videolibrary/${this.data.Id}`,
 			payload,
 			200
 		);
+
+		if (req.status !== 'success') return req;
+
+		this.attached = false;
+		this.attach(this.data.Id, false);
+		return respond('success');
 	}
 
 	async delete() {
