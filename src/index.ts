@@ -9,6 +9,12 @@ import VideoLibrary from './lib/videoLibrary';
 import { respond } from './utils/util';
 import StorageZone from './lib/storageZone';
 
+// TODO: PULL ZONE
+// TODO: DNS ZONE
+// TODO: STREAM API
+// TODO: EDGE STORAGE API
+// TODO: Add zod to validate responses
+
 export default class BunnyCDN {
 	instance: AxiosInstance;
 
@@ -126,6 +132,13 @@ export default class BunnyCDN {
 			fetchPromise,
 			fetchPromise.then((res) => res?.attachment),
 		]).then(([storageZone]) => storageZone);
+	}
+
+	async purgeURL(url: string, sync = false) {
+		return await this.#get(
+			`https://api.bunny.net/purge?url=${url}&async=${!sync}`,
+			200
+		);
 	}
 
 	async #get<T extends any>(
