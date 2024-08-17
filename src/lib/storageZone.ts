@@ -1,5 +1,10 @@
 import axios, { AxiosInstance } from 'axios';
-import { EditableStorageZone, RawStorageZone, RawStorageZoneStatistics } from '../types/storageZone';
+import {
+	EditableStorageZone,
+	RawStorageEntity,
+	RawStorageZone,
+	RawStorageZoneStatistics,
+} from '../types/storageZone';
 import { Result } from '../types/general';
 import { respond } from '../utils/util';
 import {
@@ -10,6 +15,8 @@ import {
 	StorageZoneTier,
 } from '../utils/storageZone';
 import { isValidURL } from '../utils/validator';
+import File from './File';
+import Directory from './Directory';
 
 export default class StorageZone {
 	data: RawStorageZone;
@@ -18,6 +25,7 @@ export default class StorageZone {
 	instance: AxiosInstance;
 
 	constructor(data: RawStorageZone, manualAttach: boolean = false) {
+		console.log('StorageZone', data.Password);
 		this.data = data;
 		this.instance = axios.create({
 			headers: {
@@ -131,7 +139,7 @@ export default class StorageZone {
 		);
 
 		if (req.status !== 'success') return req;
-		
+
 		this.attached = false;
 		this.attach(this.data.Id, false);
 		return respond('success');
@@ -166,6 +174,38 @@ export default class StorageZone {
 
 		this.data = newZone.data;
 		return respond('success');
+	}
+
+	async list(path?: string) {
+		if (!this.attached)
+			return respond('error', {
+				message: 'Zone is not attached',
+				status: 400,
+			});
+
+		const entities = await this.#get<RawStorageEntity<boolean>[]>(
+			(new URL(
+				path || '',
+				`https://${this.data.StorageHostname}/${this.data.Name}/`
+			).href + '/').replace(/\/\/$/, '/'),
+			200
+		);
+
+		if (entities.status !== 'success') return entities;
+
+		const data: (File | Directory)[] = [];
+
+		for (let entity of entities.data) {
+			if (entity.IsDirectory) {
+				data.push(
+					new Directory(this, entity as RawStorageEntity<true>)
+				);
+			} else {
+				data.push(new File(this, entity as RawStorageEntity<false>));
+			}
+		}
+
+		return respond('success', { data });
 	}
 
 	public static async resetToken(
@@ -220,7 +260,6 @@ export default class StorageZone {
 		});
 
 		if (req.status === 200) {
-			req.data.Password = apiKey;
 			const storageZone = new StorageZone(req.data, true);
 			storageZone.attached = true;
 

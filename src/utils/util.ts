@@ -10,3 +10,11 @@ export const respond = <T extends any, S extends 'success' | 'error'>(
 		? { message: string }
 		: T);
 };
+
+export const joinPaths = (base: string, ...paths: string[]) => {
+	let url = new URL(base);
+	for (const path of paths) {
+		url = new URL(path, url);
+	}
+	return url.toString();
+}

@@ -49,3 +49,21 @@ export interface RawStorageZoneStatistics {
 		[key: TDateISO]: number;
 	};
 }
+
+export interface RawStorageEntity<isDirectory extends boolean> {
+	Guid: string;
+	StorageZoneName: string;
+	Path: string;
+	ObjectName: string;
+	Length: number;
+	LastChanged: string;
+	ServerId: number;
+	ArrayNumber: number;
+	IsDirectory: isDirectory;
+	UserId: string;
+	ContentType: string;
+	DateCreated: string;
+	StorageZoneId: number;
+	Checksum: string;
+	ReplicatedZones: string;
+}
